@@ -12,6 +12,7 @@ include = [
     "README.md"
 ]
 keywords = ["thread"]
+categories = ["no-std", "os"]
 
 [target.'cfg(unix)'.dependencies.libc]
 version = "0.2"
