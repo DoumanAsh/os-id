@@ -1,0 +1,18 @@
+[package]
+name = "os-id"
+version = "1.0.0"
+authors = ["Douman <douman@gmx.se>"]
+edition = "2018"
+repository = "https://github.com/DoumanAsh/os-id"
+readme = "README.md"
+description = "Provides OS ids abstractions for process and thread"
+include = [
+    "**/*.rs",
+    "Cargo.toml",
+    "README.md"
+]
+keywords = ["thread"]
+
+[target.'cfg(unix)'.dependencies.libc]
+version = "0.2"
+default-features = false
