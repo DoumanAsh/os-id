@@ -81,6 +81,8 @@ impl core::cmp::PartialEq<ThreadId> for ThreadId {
     }
 }
 
+impl core::cmp::Eq for ThreadId {}
+
 impl core::hash::Hash for ThreadId {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         self.id.hash(state);

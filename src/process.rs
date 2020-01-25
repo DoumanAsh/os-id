@@ -69,6 +69,8 @@ impl core::cmp::PartialEq<ProcessId> for ProcessId {
     }
 }
 
+impl core::cmp::Eq for ProcessId {}
+
 impl core::hash::Hash for ProcessId {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         self.id.hash(state);
