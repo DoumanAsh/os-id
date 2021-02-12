@@ -14,4 +14,5 @@ fn should_use_current_process() {
 
     assert_eq!(pid1, another_thread);
     assert_eq!(pid1.as_raw(), another_thread.as_raw());
+    assert_eq!(pid1.to_string(), another_thread.to_string());
 }

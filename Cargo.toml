@@ -1,6 +1,6 @@
 [package]
 name = "os-id"
-version = "1.0.0"
+version = "2.0.0"
 authors = ["Douman <douman@gmx.se>"]
 edition = "2018"
 license = "BSL-1.0"
@@ -12,7 +12,7 @@ include = [
     "Cargo.toml",
     "README.md"
 ]
-keywords = ["thread"]
+keywords = ["thread", "process", "id"]
 categories = ["no-std", "os"]
 
 [target.'cfg(unix)'.dependencies.libc]

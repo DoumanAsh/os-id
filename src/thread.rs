@@ -4,9 +4,34 @@
 ///Raw thread id type, which is simple `u32`
 pub type RawId = u32;
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "linux"), not(target_os = "android"), not(target_os = "macos"), not(target_os = "ios"), not(target_os = "netbsd"), not(target_os = "freebsd")))]
 ///Raw thread id type, which is opaque type, platform dependent
 pub type RawId = libc::pthread_t;
+
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+///Raw thread id as `pid_t` which is signed integer
+///
+///Can be accessed via `gettid` on Linux and Android
+pub type RawId = libc::pid_t;
+
+#[cfg(target_os = "freebsd")]
+///Raw thread id signed integer
+///
+///Can be accessed via `pthread_threadid_np` on freebsd
+pub type RawId = libc::c_int;
+
+#[cfg(target_os = "netbsd")]
+///Raw thread id unsigned integer
+///
+///Can be accessed via `_lwp_self` on netbsd
+pub type RawId = libc::c_uint;
+
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+///Raw thread id as unsigned 64 bit integer.
+///
+///Can be accessed via `pthread_threadid_np` on mac
+pub type RawId = u64;
 
 #[cfg(all(not(unix), not(windows)))]
 ///Raw thread id type, which is dummy on this platform
@@ -25,7 +50,53 @@ pub fn get_raw_id() -> RawId {
     }
 }
 
-#[cfg(unix)]
+#[cfg(target_os = "freebsd")]
+#[inline]
+///Accesses id using `pthread_threadid_np`
+pub fn get_raw_id() -> RawId {
+    #[link(name = "pthread")]
+    extern "C" {
+        fn pthread_getthreadid_np() -> libc::c_int;
+    }
+
+    //According to documentation it cannot fail
+    unsafe { pthread_getthreadid_np() }
+}
+
+#[cfg(target_os = "netbsd")]
+#[inline]
+///Accesses id using `_lwp_self`
+pub fn get_raw_id() -> RawId {
+    extern "C" {
+        fn _lwp_self() -> libc::c_uint;
+    }
+
+    //According to documentation it cannot fail
+    unsafe { _lwp_self() }
+}
+
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[inline]
+///Accesses id using `pthread_threadid_np`
+pub fn get_raw_id() -> RawId {
+    #[link(name = "pthread")]
+    extern "C" {
+        fn pthread_threadid_np(thread: libc::pthread_t, thread_id: *mut u64) -> libc::c_int;
+    }
+    let mut tid: u64 = 0;
+    let err = unsafe { pthread_threadid_np(0, &mut tid) };
+    assert_eq!(err, 0);
+    tid
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[inline]
+///Accesses id using `gettid`
+pub fn get_raw_id() -> RawId {
+    unsafe { libc::syscall(libc::SYS_gettid) as libc::pid_t }
+}
+
+#[cfg(all(unix, not(target_os = "linux"), not(target_os = "android"), not(target_os = "macos"), not(target_os = "ios"), not(target_os = "netbsd"), not(target_os = "freebsd")))]
 #[inline]
 ///Access id using `pthread_self`
 pub fn get_raw_id() -> RawId {
@@ -64,14 +135,15 @@ impl ThreadId {
 }
 
 impl core::cmp::PartialEq<ThreadId> for ThreadId {
-    #[cfg(not(unix))]
+    #[cfg(any(windows, target_os = "linux", target_os = "android", target_os = "macos", target_os = "ios", target_os = "netbsd", target_os = "freebsd"))]
     fn eq(&self, other: &ThreadId) -> bool {
         self.id == other.id
     }
 
-    #[cfg(unix)]
+    #[cfg(all(unix, not(target_os = "linux"), not(target_os = "android"), not(target_os = "macos"), not(target_os = "ios"), not(target_os = "netbsd"), not(target_os = "freebsd")))]
     fn eq(&self, other: &ThreadId) -> bool {
-        extern "system" {
+        #[link(name = "pthread")]
+        extern "C" {
             pub fn pthread_equal(left: RawId, right: RawId) -> libc::c_int;
         }
 
@@ -86,5 +158,12 @@ impl core::cmp::Eq for ThreadId {}
 impl core::hash::Hash for ThreadId {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         self.id.hash(state);
+    }
+}
+
+impl core::fmt::Display for ThreadId {
+    #[inline]
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_fmt(format_args!("{}", self.id))
     }
 }

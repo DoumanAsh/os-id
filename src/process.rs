@@ -64,6 +64,7 @@ impl ProcessId {
 }
 
 impl core::cmp::PartialEq<ProcessId> for ProcessId {
+    #[inline]
     fn eq(&self, other: &ProcessId) -> bool {
         self.id == other.id
     }
@@ -72,7 +73,15 @@ impl core::cmp::PartialEq<ProcessId> for ProcessId {
 impl core::cmp::Eq for ProcessId {}
 
 impl core::hash::Hash for ProcessId {
+    #[inline]
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         self.id.hash(state);
+    }
+}
+
+impl core::fmt::Display for ProcessId {
+    #[inline]
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_fmt(format_args!("{}", self.id))
     }
 }
