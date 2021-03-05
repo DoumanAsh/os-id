@@ -82,6 +82,27 @@ impl core::hash::Hash for ProcessId {
 impl core::fmt::Display for ProcessId {
     #[inline]
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_fmt(format_args!("{}", self.id))
+        core::fmt::Display::fmt(&self.id, f)
+    }
+}
+
+impl core::fmt::LowerHex for ProcessId {
+    #[inline]
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        core::fmt::LowerHex::fmt(&self.id, f)
+    }
+}
+
+impl core::fmt::UpperHex for ProcessId {
+    #[inline]
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        core::fmt::UpperHex::fmt(&self.id, f)
+    }
+}
+
+impl core::fmt::Octal for ProcessId {
+    #[inline]
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        core::fmt::Octal::fmt(&self.id, f)
     }
 }
