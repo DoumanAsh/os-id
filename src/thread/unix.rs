@@ -107,6 +107,7 @@ pub fn raw_thread_eq(left: RawId, right: RawId) -> bool {
 #[cfg(feature = "thread-name")]
 ///Accesses current thread name using `pthread_getname_np`.
 pub fn get_current_thread_name() -> str_buf::StrBuf::<16> {
+     #[link(name = "pthread")]
     extern "C" {
         pub fn pthread_getname_np(thread: libc::pthread_t, name: *mut i8, len: libc::size_t) -> libc::c_int;
     }
