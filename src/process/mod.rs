@@ -1,46 +1,19 @@
 //! Process id module
 
 #[cfg(windows)]
-///Raw process id type, which is simple `u32`
-pub type RawId = u32;
-
-#[cfg(unix)]
-///Raw process id type, which is opaque type, platform dependent
-pub type RawId = libc::pid_t;
-
-#[cfg(all(not(unix), not(windows)))]
-///Raw process id type, which is dummy on this platform
-pub type RawId = u8;
-
+mod win32;
 #[cfg(windows)]
-#[inline]
-///Access id using `GetCurrentProcessId`
-pub fn get_raw_id() -> RawId {
-    extern "system" {
-        pub fn GetCurrentProcessId() -> RawId;
-    }
-
-    unsafe {
-        GetCurrentProcessId()
-    }
-}
-
+pub use win32::*;
 #[cfg(unix)]
-#[inline]
-///Access id using `getpid`
-pub fn get_raw_id() -> RawId {
-    unsafe {
-        libc::getpid()
-    }
-}
-
+mod unix;
+#[cfg(unix)]
+pub use unix::*;
 #[cfg(all(not(unix), not(windows)))]
-#[inline]
-///Returns zero id, as this platform has no concept of processes
-pub fn get_raw_id() -> RawId {
-    0
-}
+mod no_os;
+#[cfg(all(not(unix), not(windows)))]
+pub use no_os::*;
 
+#[repr(transparent)]
 #[derive(Copy, Clone, Debug)]
 ///Process identifier.
 pub struct ProcessId {

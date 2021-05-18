@@ -135,7 +135,7 @@ impl ThreadId {
 }
 
 impl core::cmp::PartialEq<ThreadId> for ThreadId {
-    #[cfg(any(windows, target_os = "linux", target_os = "android", target_os = "macos", target_os = "ios", target_os = "netbsd", target_os = "freebsd"))]
+    #[cfg(any(windows, target_os = "linux", target_os = "android", target_os = "macos", target_os = "ios", target_os = "netbsd", target_os = "freebsd", target_os = "unknown"))]
     #[inline]
     fn eq(&self, other: &ThreadId) -> bool {
         self.id == other.id
