@@ -1,4 +1,8 @@
-//! Contains structs to represent process and thread identifiers
+//! Primitive abstractions over OS identifiers.
+//!
+//! Features
+//!
+//! - `thread-name` Enables function `get_current_thread_name`
 
 #![no_std]
 #![cfg_attr(feature = "cargo-clippy", allow(clippy::style))]

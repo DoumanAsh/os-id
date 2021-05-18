@@ -1,6 +1,6 @@
 [package]
 name = "os-id"
-version = "2.0.1"
+version = "2.0.2"
 authors = ["Douman <douman@gmx.se>"]
 edition = "2018"
 license = "BSL-1.0"
@@ -32,3 +32,6 @@ optional = true
 [features]
 # Enables API to access thread name
 thread-name = ["str-buf", "winapi"]
+
+[package.metadata.docs.rs]
+features = ["thread-name"]

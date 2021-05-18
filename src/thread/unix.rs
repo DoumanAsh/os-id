@@ -105,7 +105,7 @@ pub fn raw_thread_eq(left: RawId, right: RawId) -> bool {
 }
 
 #[cfg(feature = "thread-name")]
-///Returns empty thread name as this target has no concept of threads.
+///Accesses current thread name using `pthread_getname_np`.
 pub fn get_current_thread_name() -> str_buf::StrBuf::<16> {
     extern "C" {
         pub fn pthread_getname_np(thread: libc::pthread_t, name: *mut i8, len: libc::size_t) -> libc::c_int;
@@ -118,7 +118,13 @@ pub fn get_current_thread_name() -> str_buf::StrBuf::<16> {
     };
 
     if result == 0 {
-        match core::str::from_utf8(&storage) {
+        let slice = if let Some(null_idx) = storage.iter().position(|b| *b == b'\0') {
+            &storage[..null_idx]
+        } else {
+            &storage[..]
+        };
+
+        match core::str::from_utf8(slice) {
             Ok(res) => return str_buf::StrBuf::from_str(res),
             _ => (),
         }

@@ -22,7 +22,9 @@ pub fn raw_thread_eq(left: RawId, right: RawId) -> bool {
 }
 
 #[cfg(feature = "thread-name")]
-///Returns empty thread name as this target has no concept of threads.
+///Accesses thread name using `GetThreadDescription`.
+///
+///Only compiles on Win10.
 pub fn get_current_thread_name() -> str_buf::StrBuf::<16> {
     use core::ptr;
     use winapi::shared::winerror::HRESULT;
