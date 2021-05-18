@@ -18,3 +18,17 @@ categories = ["no-std", "os"]
 [target.'cfg(unix)'.dependencies.libc]
 version = "0.2"
 default-features = false
+
+[target.'cfg(windows)'.dependencies.winapi]
+version = "0.3"
+default-features = false
+optional = true
+features = ["stringapiset", "processthreadsapi", "winbase", "winerror", "errhandlingapi"]
+
+[dependencies.str-buf]
+version = "2"
+optional = true
+
+[features]
+# Enables API to access thread name
+thread-name = ["str-buf", "winapi"]

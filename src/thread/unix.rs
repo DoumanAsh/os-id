@@ -1,13 +1,6 @@
-//! Thread id module
-
-#[cfg(windows)]
-///Raw thread id type, which is simple `u32`
-pub type RawId = u32;
-
 #[cfg(all(unix, not(target_os = "linux"), not(target_os = "android"), not(target_os = "macos"), not(target_os = "ios"), not(target_os = "netbsd"), not(target_os = "freebsd")))]
 ///Raw thread id type, which is opaque type, platform dependent
 pub type RawId = libc::pthread_t;
-
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 ///Raw thread id as `pid_t` which is signed integer
@@ -32,23 +25,6 @@ pub type RawId = libc::c_uint;
 ///
 ///Can be accessed via `pthread_threadid_np` on mac
 pub type RawId = u64;
-
-#[cfg(all(not(unix), not(windows)))]
-///Raw thread id type, which is dummy on this platform
-pub type RawId = u8;
-
-#[cfg(windows)]
-#[inline]
-///Access id using `GetCurrentThreadId`
-pub fn get_raw_id() -> RawId {
-    extern "system" {
-        pub fn GetCurrentThreadId() -> RawId;
-    }
-
-    unsafe {
-        GetCurrentThreadId()
-    }
-}
 
 #[cfg(target_os = "freebsd")]
 #[inline]
@@ -105,87 +81,48 @@ pub fn get_raw_id() -> RawId {
     }
 }
 
-#[cfg(all(not(unix), not(windows)))]
-#[inline]
-///Returns zero id, as this platform has no concept of threads
-pub fn get_raw_id() -> RawId {
-    0
-}
-
-#[derive(Copy, Clone, Debug)]
-///Thread identifier.
-pub struct ThreadId {
-    id: RawId,
-}
-
-impl ThreadId {
-    #[inline]
-    ///Gets current thread id
-    pub fn current() -> Self {
-        Self {
-            id: get_raw_id(),
-        }
+#[inline(always)]
+///Thread equality function.
+///
+///Guarantees to compare regardless of raw type.
+pub fn raw_thread_eq(left: RawId, right: RawId) -> bool {
+    #[cfg(any(target_os = "linux", target_os = "android", target_os = "macos", target_os = "ios", target_os = "netbsd", target_os = "freebsd"))]
+    {
+        left == right
     }
 
-    #[inline]
-    ///Access Raw identifier.
-    pub const fn as_raw(&self) -> RawId {
-        self.id
-    }
-}
-
-impl core::cmp::PartialEq<ThreadId> for ThreadId {
-    #[cfg(any(windows, target_os = "linux", target_os = "android", target_os = "macos", target_os = "ios", target_os = "netbsd", target_os = "freebsd", target_os = "unknown"))]
-    #[inline]
-    fn eq(&self, other: &ThreadId) -> bool {
-        self.id == other.id
-    }
-
-    #[cfg(all(unix, not(target_os = "linux"), not(target_os = "android"), not(target_os = "macos"), not(target_os = "ios"), not(target_os = "netbsd"), not(target_os = "freebsd")))]
-    fn eq(&self, other: &ThreadId) -> bool {
+    #[cfg(all(not(target_os = "linux"), not(target_os = "android"), not(target_os = "macos"), not(target_os = "ios"), not(target_os = "netbsd"), not(target_os = "freebsd")))]
+    {
         #[link(name = "pthread")]
         extern "C" {
             pub fn pthread_equal(left: RawId, right: RawId) -> libc::c_int;
         }
 
         unsafe {
-            pthread_equal(self.id, other.id) != 0
+            pthread_equal(left, right) != 0
         }
     }
 }
 
-impl core::cmp::Eq for ThreadId {}
-
-impl core::hash::Hash for ThreadId {
-    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
+#[cfg(feature = "thread-name")]
+///Returns empty thread name as this target has no concept of threads.
+pub fn get_current_thread_name() -> str_buf::StrBuf::<16> {
+    extern "C" {
+        pub fn pthread_getname_np(thread: libc::pthread_t, name: *mut i8, len: libc::size_t) -> libc::c_int;
     }
-}
 
-impl core::fmt::Display for ThreadId {
-    #[inline]
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        core::fmt::Display::fmt(&self.id, f)
-    }
-}
+    let mut storage = [0u8; 16];
 
-impl core::fmt::LowerHex for ThreadId {
-    #[inline]
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        core::fmt::LowerHex::fmt(&self.id, f)
-    }
-}
+    let result = unsafe {
+        pthread_getname_np(libc::pthread_self(), storage.as_mut_ptr() as _, storage.len() as _)
+    };
 
-impl core::fmt::UpperHex for ThreadId {
-    #[inline]
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        core::fmt::UpperHex::fmt(&self.id, f)
+    if result == 0 {
+        match core::str::from_utf8(&storage) {
+            Ok(res) => return str_buf::StrBuf::from_str(res),
+            _ => (),
+        }
     }
-}
 
-impl core::fmt::Octal for ThreadId {
-    #[inline]
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        core::fmt::Octal::fmt(&self.id, f)
-    }
+    str_buf::StrBuf::new()
 }

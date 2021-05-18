@@ -15,3 +15,15 @@ fn should_use_current_thread() {
     assert_ne!(thread1, another_thread);
     assert_ne!(thread1.as_raw(), another_thread.as_raw());
 }
+
+#[cfg(feature = "thread-name")]
+#[test]
+fn should_get_current_thread_name() {
+    std::thread::Builder::new().name("test".to_owned()).spawn(|| {
+        let name = os_id::thread::get_current_thread_name();
+        assert_eq!(name, "test");
+    }).unwrap().join().unwrap();
+
+    let name = os_id::thread::get_current_thread_name();
+    assert_ne!(name, "test");
+}
