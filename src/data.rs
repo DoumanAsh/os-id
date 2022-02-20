@@ -36,6 +36,12 @@ impl ThreadName {
         }
     }
 
+    #[inline(always)]
+    ///Retrieves current thread's name
+    pub fn current() -> Self {
+        crate::thread::get_current_thread_name()
+    }
+
     #[inline]
     ///Returns name as byte slice
     pub fn as_bytes(&self) -> &[u8] {
