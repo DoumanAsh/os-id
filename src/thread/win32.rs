@@ -1,13 +1,22 @@
+use crate::ThreadName;
+
+use core::ptr;
+
 ///Raw thread id type, which is simple `u32`
 pub type RawId = u32;
+
+extern "system" {
+    fn GetCurrentThread() -> isize;
+    fn WideCharToMultiByte(codepage: u32, dwflags: u32, lpwidecharstr: *const u16, cchwidechar: i32, lpmultibytestr: *const u8, cbmultibyte: i32, lpdefaultchar: *const u8, lpuseddefaultchar: *mut i32) -> i32;
+    fn LocalFree(hmem: isize) -> isize;
+    fn GetCurrentThreadId() -> RawId;
+    fn GetModuleHandleA(lpmodulename: *const u8) -> isize;
+    fn GetProcAddress(hmodule: isize, lpprocname: *const u8) -> isize;
+}
 
 #[inline]
 ///Access id using `GetCurrentThreadId`
 pub fn get_raw_id() -> RawId {
-    extern "system" {
-        pub fn GetCurrentThreadId() -> RawId;
-    }
-
     unsafe {
         GetCurrentThreadId()
     }
@@ -21,43 +30,108 @@ pub fn raw_thread_eq(left: RawId, right: RawId) -> bool {
     left == right
 }
 
-#[cfg(feature = "thread-name")]
+
+//Reference
+//https://github.com/rust-lang/rust/blob/673d0db5e393e9c64897005b470bfeb6d5aec61b/library/std/src/sys/windows/compat.rs
+macro_rules! compat_fn {
+    ($module:literal: $(
+        $(#[$meta:meta])*
+        pub fn $symbol:ident($($argname:ident: $argtype:ty),*) -> $rettype:ty $fallback_body:block
+    )*) => ($(
+        $(#[$meta])*
+        pub mod $symbol {
+            #[allow(unused_imports)]
+            use super::*;
+            use core::mem;
+
+            type F = unsafe extern "system" fn($($argtype),*) -> $rettype;
+
+            /// Points to the DLL import, or the fallback function.
+            ///
+            /// This static can be an ordinary, unsynchronized, mutable static because
+            /// we guarantee that all of the writes finish during CRT initialization,
+            /// and all of the reads occur after CRT initialization.
+            static mut PTR: Option<F> = None;
+
+            /// This symbol is what allows the CRT to find the `init` function and call it.
+            /// It is marked `#[used]` because otherwise Rust would assume that it was not
+            /// used, and would remove it.
+            #[used]
+            #[link_section = ".CRT$XCU"]
+            static INIT_TABLE_ENTRY: unsafe extern "C" fn() = init;
+
+            unsafe extern "C" fn init() {
+                // There is no locking here. This code is executed before main() is entered, and
+                // is guaranteed to be single-threaded.
+                //
+                // DO NOT do anything interesting or complicated in this function! DO NOT call
+                // any Rust functions or CRT functions, if those functions touch any global state,
+                // because this function runs during global initialization. For example, DO NOT
+                // do any dynamic allocation, don't call LoadLibrary, etc.
+                let module_name: *const u8 = concat!($module, "\0").as_ptr();
+                let symbol_name: *const u8 = concat!(stringify!($symbol), "\0").as_ptr();
+                let module_handle = GetModuleHandleA(module_name);
+                if module_handle != 0 {
+                    match GetProcAddress(module_handle, symbol_name) as usize {
+                        0 => {}
+                        n => {
+                            PTR = Some(mem::transmute::<usize, F>(n));
+                        }
+                    }
+                }
+            }
+
+            #[allow(dead_code)]
+            pub fn option() -> Option<F> {
+                unsafe { PTR }
+            }
+
+            #[allow(dead_code)]
+            pub unsafe fn call($($argname: $argtype),*) -> $rettype {
+                if let Some(ptr) = PTR {
+                    ptr($($argname),*)
+                } else {
+                    $fallback_body
+                }
+            }
+        }
+
+        $(#[$meta])*
+        pub use $symbol::call as $symbol;
+    )*)
+}
+
 ///Accesses thread name using `GetThreadDescription`.
 ///
-///Only compiles on Win10.
-pub fn get_current_thread_name() -> str_buf::StrBuf::<16> {
-    use core::ptr;
-    use winapi::shared::winerror::HRESULT;
-    use winapi::um::winnt::HANDLE;
-    use winapi::um::winnt::PWSTR;
-    use winapi::um::processthreadsapi::GetCurrentThread;
-    use winapi::um::winnls::CP_UTF8;
-    use winapi::um::stringapiset::WideCharToMultiByte;
+///Only available on Win10.
+pub fn get_current_thread_name() -> ThreadName {
+    const CP_UTF8: u32 = 65001u32;
 
-    extern "system" {
-        pub fn GetThreadDescription(handle: HANDLE, out: *mut PWSTR) -> HRESULT;
+    compat_fn! {
+        "kernel32":
+
+        // >= Win10
+        #[allow(non_snake_case)]
+        pub fn GetThreadDescription(handle: isize, out: *mut *const u16) -> i32 {
+            return -1
+        }
     }
 
-    let mut result = str_buf::StrBuf::new();
-    let mut desc_ptr = core::ptr::null_mut();
+    let mut desc_ptr = ptr::null();
 
     let code = unsafe {
         GetThreadDescription(GetCurrentThread(), &mut desc_ptr)
     };
 
     if code < 0 {
-        return result;
+        return ThreadName::new();
     }
 
-    let storage = result.as_write_slice();
+    let mut result = [0u8; 16];
     unsafe {
-        let len = WideCharToMultiByte(CP_UTF8, 0, desc_ptr as _, -1, storage.as_mut_ptr() as _, storage.len() as _, ptr::null(), ptr::null_mut()) as _;
-        result.set_len(len);
-        if let Some(null_idx) = result.as_slice().iter().position(|b| *b == b'\0') {
-            result.set_len(null_idx as _);
-        }
-        winapi::um::winbase::LocalFree(desc_ptr as _);
+        WideCharToMultiByte(CP_UTF8, 0, desc_ptr as _, -1, result.as_mut_ptr() as _, result.len() as _, ptr::null(), ptr::null_mut());
+        LocalFree(desc_ptr as _);
     };
 
-    result
+    ThreadName::name(result)
 }
