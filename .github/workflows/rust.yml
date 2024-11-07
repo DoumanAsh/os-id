@@ -53,3 +53,9 @@ jobs:
 
     - name: Test
       run: cargo test
+
+    - name: Check features
+      run: |
+        cargo clippy --no-default-features
+        cargo clippy --no-default-features --features thread
+        cargo clippy --no-default-features --features process

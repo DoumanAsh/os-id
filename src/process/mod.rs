@@ -1,5 +1,7 @@
 //! Process id module
 
+use core::{cmp, hash, fmt};
+
 #[cfg(windows)]
 mod win32;
 #[cfg(windows)]
@@ -36,46 +38,46 @@ impl ProcessId {
     }
 }
 
-impl core::cmp::PartialEq<ProcessId> for ProcessId {
+impl cmp::PartialEq<ProcessId> for ProcessId {
     #[inline]
     fn eq(&self, other: &ProcessId) -> bool {
         self.id == other.id
     }
 }
 
-impl core::cmp::Eq for ProcessId {}
+impl cmp::Eq for ProcessId {}
 
-impl core::hash::Hash for ProcessId {
+impl hash::Hash for ProcessId {
     #[inline]
-    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
         self.id.hash(state);
     }
 }
 
-impl core::fmt::Display for ProcessId {
+impl fmt::Display for ProcessId {
     #[inline]
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        core::fmt::Display::fmt(&self.id, f)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.id, f)
     }
 }
 
-impl core::fmt::LowerHex for ProcessId {
+impl fmt::LowerHex for ProcessId {
     #[inline]
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        core::fmt::LowerHex::fmt(&self.id, f)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::LowerHex::fmt(&self.id, f)
     }
 }
 
-impl core::fmt::UpperHex for ProcessId {
+impl fmt::UpperHex for ProcessId {
     #[inline]
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        core::fmt::UpperHex::fmt(&self.id, f)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::UpperHex::fmt(&self.id, f)
     }
 }
 
-impl core::fmt::Octal for ProcessId {
+impl fmt::Octal for ProcessId {
     #[inline]
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        core::fmt::Octal::fmt(&self.id, f)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Octal::fmt(&self.id, f)
     }
 }

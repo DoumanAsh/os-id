@@ -5,3 +5,8 @@
 [![Build](https://github.com/DoumanAsh/os-id/workflows/Rust/badge.svg)](https://github.com/DoumanAsh/os-id/actions?query=workflow%3ARust)
 
 Primitive abstractions over OS identifiers
+
+## Features
+
+- `process` - Enables process module. Default ON.
+- `thread` - Enables thread module. Default ON.

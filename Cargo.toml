@@ -18,3 +18,11 @@ categories = ["no-std", "os"]
 [target.'cfg(unix)'.dependencies.libc]
 version = "0.2"
 default-features = false
+optional = true
+
+[features]
+default = ["process", "thread"]
+# Enables process related code
+process = []
+# Enables thread related code
+thread = ["libc"]

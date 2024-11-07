@@ -30,7 +30,6 @@ pub fn raw_thread_eq(left: RawId, right: RawId) -> bool {
     left == right
 }
 
-
 //Reference
 //https://github.com/rust-lang/rust/blob/673d0db5e393e9c64897005b470bfeb6d5aec61b/library/std/src/sys/windows/compat.rs
 macro_rules! compat_fn {

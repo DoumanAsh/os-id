@@ -1,5 +1,7 @@
 //! Thread id module
 
+use core::{cmp, hash, fmt};
+
 #[cfg(windows)]
 mod win32;
 #[cfg(windows)]
@@ -36,45 +38,45 @@ impl ThreadId {
     }
 }
 
-impl core::cmp::Eq for ThreadId {}
+impl cmp::Eq for ThreadId {}
 
-impl core::cmp::PartialEq<ThreadId> for ThreadId {
+impl cmp::PartialEq<ThreadId> for ThreadId {
     #[inline(always)]
     fn eq(&self, other: &ThreadId) -> bool {
         raw_thread_eq(self.id, other.id)
     }
 }
 
-impl core::hash::Hash for ThreadId {
-    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+impl hash::Hash for ThreadId {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
         self.id.hash(state);
     }
 }
 
-impl core::fmt::Display for ThreadId {
+impl fmt::Display for ThreadId {
     #[inline]
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        core::fmt::Display::fmt(&self.id, f)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.id, f)
     }
 }
 
-impl core::fmt::LowerHex for ThreadId {
+impl fmt::LowerHex for ThreadId {
     #[inline]
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        core::fmt::LowerHex::fmt(&self.id, f)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::LowerHex::fmt(&self.id, f)
     }
 }
 
-impl core::fmt::UpperHex for ThreadId {
+impl fmt::UpperHex for ThreadId {
     #[inline]
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        core::fmt::UpperHex::fmt(&self.id, f)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::UpperHex::fmt(&self.id, f)
     }
 }
 
-impl core::fmt::Octal for ThreadId {
+impl fmt::Octal for ThreadId {
     #[inline]
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        core::fmt::Octal::fmt(&self.id, f)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Octal::fmt(&self.id, f)
     }
 }
