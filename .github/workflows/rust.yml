@@ -16,46 +16,30 @@ on:
       - '.gitignore'
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-
+  check:
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
+    if: github.event.pull_request.draft == false
+    uses: DoumanAsh/douman-ci/.github/workflows/rust.yml@master
+    with:
+      runs-on: ${{ matrix.os }}
+      min-rustc-version: "1.64.0"
+      cargo-features: "thread,process"
 
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install Rust Unix
-      if: runner.os != 'Windows'
-      run: |
-        if rustup --version >/dev/null 2>&1; then
-            rustup update
-        else
-             curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal --default-toolchain stable
-             echo ::add-path::$HOME/.cargo/bin
-        fi
-    - name: Install Rust Windows
-      if: runner.os == 'Windows'
-      run: |
-        if (Get-Command "rustup" -ErrorAction SilentlyContinue) {
-            rustup update
-        } else {
-            Invoke-WebRequest https://static.rust-lang.org/rustup/dist/i686-pc-windows-gnu/rustup-init.exe -OutFile rustup-init.exe
-            ./rustup-init.exe -y --profile minimal --default-toolchain stable
-            echo ::add-path::%USERPROFILE%\.cargo\bin
-        }
-
-    - name: Rust version
-      run: |
-        cargo --version
-        rustc --version
-
-    - name: Test
-      run: cargo test
-
-    - name: Check features
-      run: |
-        cargo clippy --no-default-features
-        cargo clippy --no-default-features --features thread
-        cargo clippy --no-default-features --features process
+  cross-platform-test:
+    needs: [check]
+    if: github.event.pull_request.draft == false
+    strategy:
+      matrix:
+        target: [
+          "arm-unknown-linux-musleabi",
+          "i586-unknown-linux-musl",
+          "powerpc-unknown-linux-gnu",
+          "aarch64-unknown-linux-musl",
+        ]
+    uses: DoumanAsh/douman-ci/.github/workflows/cross-rust.yml@master
+    with:
+      cargo-features: "thread,process"
+      cargo-target: ${{ matrix.target }}
+      cargo-no-features: true

@@ -6,7 +6,7 @@
 //!- `thread` - Enables thread module. Default ON.
 
 #![no_std]
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::style))]
+#![allow(clippy::style)]
 #![warn(missing_docs)]
 
 #[cfg(feature = "thread")]
